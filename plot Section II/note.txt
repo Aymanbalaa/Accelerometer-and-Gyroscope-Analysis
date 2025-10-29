@@ -1,0 +1,8 @@
+
+The csv files containing the accelerometer data are formatted as follows:
+
+Time (s)	Acceleration x (m/s^2)	Acceleration y (m/s^2)	Acceleration z (m/s^2)
+
+
+The csv files containing the gyroscope data are formatted as follows:
+
