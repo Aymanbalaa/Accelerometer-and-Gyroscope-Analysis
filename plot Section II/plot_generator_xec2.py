@@ -1,3 +1,0 @@
-Time (s)	Acceleration x (m/s^2)	Acceleration y (m/s^2)	Acceleration z (m/s^2)
-
-
