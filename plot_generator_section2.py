@@ -18,28 +18,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # --------------------[ CONFIG ]--------------------
-# Choose which vehicle to process: 1 or 2
-VEHICLE = 2  # change to 2 for vehicle 2
+VEHICLE = 2  # 1 or 2
 
-# Constants and paths (relative to repo root)
-G = 9.805  # m/s^2
+G = 9.805  
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.join(ROOT, "projectfiles")
 PLOTS_DIR = os.path.join(ROOT, "plot_Section_II")
 os.makedirs(PLOTS_DIR, exist_ok=True)
-
-# Section I (stationary) files used to estimate bias
 SEC1_ACC = os.path.join(PROJECT, "secI_acc.csv")
 SEC1_GYR = os.path.join(PROJECT, "secI_gyr.csv")
-
-# Section II (moving) files for the chosen vehicle
 ACC_FILE = os.path.join(PROJECT, f"secII_acc_{VEHICLE}.csv")
 GYR_FILE = os.path.join(PROJECT, f"secII_gyr_{VEHICLE}.csv")
 
 
-# --------------------[ IO HELPERS ]--------------------
 def save_plot(filename: str):
-    """Save current Matplotlib figure into plot_Section_II and close it."""
     path = os.path.join(PLOTS_DIR, filename)
     plt.savefig(path, dpi=300, bbox_inches="tight")
     plt.close()
@@ -47,19 +39,17 @@ def save_plot(filename: str):
 
 def load_xyz_csv(path: str) -> pd.DataFrame:
     """
-    Load CSV with columns [time, x, y, z].
-    The raw files have headers; we normalize names to ['time','x','y','z'].
+     .cvs format [time, x, y, z].
     """
     df = pd.read_csv(path)
     df.columns = ["time", "x", "y", "z"]
     return df
 
 
-# --------------------[ SECTION I: BIAS (reused) ]--------------------
+# --------------------[ SECTION I stuff ]--------------------
 def fit_linear_bias(df: pd.DataFrame) -> dict:
     """
-    Fit bias lines to each axis: bias(t) = b_s * t + b0
-    Returns dict like {'x': (b_s, b0), 'y': (b_s, b0), 'z': (b_s, b0)}.
+    from section 1
     """
     t = df["time"].to_numpy()
     biases = {}
@@ -71,18 +61,15 @@ def fit_linear_bias(df: pd.DataFrame) -> dict:
 
 
 def correct_gravity_on_z(acc_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Subtract local gravity from accelerometer z before bias/noise analysis or use.
-    """
     out = acc_df.copy()
     out["z"] = out["z"] - G
     return out
 
 
-# --------------------[ SECTION II: PREP & MATH ]--------------------
+# --------------------[ SECTION II ]--------------------
 def apply_bias_removal(df: pd.DataFrame, biases: dict) -> pd.DataFrame:
     """
-    Remove time-varying bias using b(t) = b_s * t + b0 for each axis.
+    correct bias using b(t) = b_s * t + b0 for each axis.
     """
     t = df["time"].to_numpy()
     out = df.copy()
@@ -152,22 +139,21 @@ def main():
     acc = load_xyz_csv(ACC_FILE)
     gyr = load_xyz_csv(GYR_FILE)
 
-    # --- Remove bias & gravity ---
+    # --- remove bias and gravity ---
     acc = correct_gravity_on_z(acc)
     acc = apply_bias_removal(acc, acc_bias)
     gyr = apply_bias_removal(gyr, gyr_bias)
-
-    # --- Integrations ---
+    # --- get velo and position  ---
     t_a, az, vz, pz = kinematics_from_accel_z(acc)
     t_g, wz, th = angles_from_gyro_z(gyr)
 
-    # --- Plots (5 per vehicle) ---
+    # --- plot ---
     prefix = f"vehicle_{VEHICLE}"
-    plot_series(t_a, pz,  f"Vehicle {VEHICLE} – position p_z(t)",      "Position z [m]", prefix + "_pz.png"     )
-    plot_series(t_a, vz,  f"Vehicle {VEHICLE} – speed v_z(t)",         "Speed z [m/s]",  prefix + "_vz.png"     )
-    plot_series(t_a, az,  f"Vehicle {VEHICLE} – acceleration a_z(t)",  "Acceleration z [m/s²]", prefix + "_az.png"    )
-    plot_series(t_g, th,  f"Vehicle {VEHICLE} – angle θ_z(t)",         "Angle [rad]",       prefix +    "_theta.png"  )
-    plot_series(t_g, wz,  f"Vehicle {VEHICLE} – angular rate ω_z(t)",  "Angular rate [rad/s]", prefix + "_omega.png"  )
+    plot_series(t_a, pz,  f"Vehicle {VEHICLE} - position p_z(t)",      "Position z [m]", prefix + "_pz.png"     )
+    plot_series(t_a, vz,  f"Vehicle {VEHICLE} - speed v_z(t)",         "Speed z [m/s]",  prefix + "_vz.png"     )
+    plot_series(t_a, az,  f"Vehicle {VEHICLE} - acceleration a_z(t)",  "Acceleration z [m/s²]", prefix + "_az.png"    )
+    plot_series(t_g, th,  f"Vehicle {VEHICLE} - angle θ_z(t)",         "Angle [rad]",       prefix +    "_theta.png"  )
+    plot_series(t_g, wz,  f"Vehicle {VEHICLE} - angular rate ω_z(t)",  "Angular rate [rad/s]", prefix + "_omega.png"  )
 
 
 if __name__ == "__main__":
