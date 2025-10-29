@@ -1,15 +1,7 @@
 
 """
-Section II – Trajectory characterization using IMU data
+Section II vehicul going up a 16m pipe 
 
-This script:
-  • learns linear biases (slope, intercept) from Section I stationary data
-  • removes gravity on accel z (g = 9.805 m/s^2)
-  • removes time-varying bias b(t) = b_s * t + b0 on all axes
-  • integrates to get v_z(t), p_z(t) and θ_z(t)
-  • saves the 5 required plots for the selected vehicle to plot_Section_II/
-
-Keeps the structure and style of section1.py (helpers, plotting).
 """
 
 import os
