@@ -1,6 +1,6 @@
 
 """
-Section II vehicul going up a 16m pipe 
+Section II vehicul going up or down a 16m pipe 
 
 """
 
@@ -73,6 +73,8 @@ def apply_bias_removal(df: pd.DataFrame, biases: dict) -> pd.DataFrame:
 
 def Cumulative_trapz(y: np.ndarray, t: np.ndarray) -> np.ndarray:
     """
+    integration in real time using trapezoid rule inteasd of cumulative sum for lower drift
+    
     Cumulative trapezoid integral with same length output and y[0] baseline 0.
     v[k] = v[k-1] + (y[k-1] + y[k]) * 0.5 * (t[k] - t[k-1])
     """
@@ -84,12 +86,9 @@ def Cumulative_trapz(y: np.ndarray, t: np.ndarray) -> np.ndarray:
 
 
 def kinematics_from_accel_z(acc_df: pd.DataFrame):
-    """
-    From (gravity + bias corrected) accelerometer z:
-      az -> integrate -> vz -> integrate -> pz
-    """
     t = acc_df["time"].to_numpy()
     az = acc_df["z"].to_numpy()
+    # integration in discret time
     vz = Cumulative_trapz(az, t)
     pz = Cumulative_trapz(vz, t)
     return t, az, vz, pz
@@ -97,14 +96,12 @@ def kinematics_from_accel_z(acc_df: pd.DataFrame):
 
 def angles_from_gyro_z(gyr_df: pd.DataFrame):
     """
-    From bias-corrected gyro z (rad/s):
-      wz -> integrate -> theta (rad)
+    integrate angular rate to get angle
     """
     t = gyr_df["time"].to_numpy()
     wz = gyr_df["z"].to_numpy()
     theta = Cumulative_trapz(wz, t)
-    # Optional unwrapping (usually used for phase angles).
-    # theta = np.unwrap(theta)  # keep commented unless needed
+    # theta = np.unwrap(theta)  # possibly if better
     return t, wz, theta
 
 
